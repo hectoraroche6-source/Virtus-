@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIRTUD</title>
+
+<style>
+body{
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at center,#0f2027,#0a0f1f 70%);
+    color:white;
+    overflow-x:hidden;
+}
+
+/* PORTADA */
+#cover{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+#cover h1{
+    font-size:48px;
+    letter-spacing:4px;
+}
+
+#enterBtn{
+    margin-top:30px;
+    padding:15px 45px;
+    border:none;
+    border-radius:40px;
+    background:linear-gradient(90deg,#00f2ff,#00aaff);
+    color:black;
+    font-weight:bold;
+    font-size:18px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+#enterBtn:hover{
+    transform:scale(1.05);
+}
+
+/* SITIO OCULTO INICIALMENTE */
+#mainSite{
+    display:none;
+}
+
+/* HEADER */
+header{
+    padding:20px;
+    text-align:center;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(10px);
+    font-size:22px;
+    color:#00f2ff;
+}
+
+/* PRODUCTOS */
+.products{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    padding:30px;
+}
+
+.card{
+    background:rgba(255,255,255,0.05);
+    padding:20px;
+    border-radius:15px;
+    transition:0.3s;
+}
+
+.card:hover{
+    box-shadow:0 0 20px #00f2ff;
+}
+
+.card button{
+    margin-top:10px;
+    padding:8px;
+    border:none;
+    border-radius:8px;
+    background:#00f2ff;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* MINI CARRITO */
+.miniCart{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    background:linear-gradient(90deg,#00f2ff,#00aaff);
+    color:black;
+    padding:10px 18px;
+    border-radius:40px;
+    cursor:pointer;
+    font-weight:bold;
+    display:none;
+}
+
+.miniCart span{
+    background:black;
+    color:#00f2ff;
+    padding:3px 7px;
+    border-radius:50%;
+    margin-left:6px;
+}
+
+/* PANEL CARRITO */
+.cartPanel{
+    position:fixed;
+    right:-350px;
+    top:0;
+    width:300px;
+    height:100%;
+    background:#0f172a;
+    padding:20px;
+    transition:0.4s;
+    overflow:auto;
+}
+
+.cartPanel.active{
+    right:0;
+}
+
+/* HUELLA ADMIN */
+.fingerprint{
+    position:fixed;
+    left:15px;
+    bottom:15px;
+    font-size:28px;
+    opacity:0.6;
+    cursor:pointer;
+    display:none;
+    transition:0.3s;
+}
+
+.fingerprint:hover{
+    opacity:1;
+    transform:scale(1.2);
+}
+</style>
+</head>
+
+<body>
+
+<!-- PORTADA -->
+<div id="cover">
+    <h1>VIRTUD</h1>
+    <button id="enterBtn" onclick="enterSite()">Entrar</button>
+</div>
+
+<!-- TIENDA -->
+<div id="mainSite">
+
+<header>VIRTUD STORE</header>
+
+<div class="products" id="productContainer"></div>
+
+<!-- MINI CARRITO -->
+<div class="miniCart" id="miniCart" onclick="toggleCart()">
+🛒 <span id="cartCount">0</span>
+</div>
+
+<!-- PANEL CARRITO -->
+<div class="cartPanel" id="cartPanel">
+<h3>Carrito</h3>
+<ul id="cartItems"></ul>
+<p>Total: $<span id="cartTotal">0</span></p>
+<button onclick="clearCart()">Vaciar</button>
+</div>
+
+<!-- HUELLA -->
+<div class="fingerprint" id="adminAccess" onclick="adminAccess()">
+🔐
+</div>
+
+</div>
+
+<script>
+
+let products = [
+    {name:"Producto A", price:100},
+    {name:"Producto B", price:200},
+    {name:"Producto C", price:300}
+];
+
+let cart = [];
+
+/* ENTRAR */
+function enterSite(){
+    document.getElementById("cover").style.display="none";
+    document.getElementById("mainSite").style.display="block";
+    document.getElementById("miniCart").style.display="block";
+    document.getElementById("adminAccess").style.display="block";
+    renderProducts(products);
+}
+
+/* MOSTRAR PRODUCTOS */
+function renderProducts(list){
+    let container=document.getElementById("productContainer");
+    container.innerHTML="";
+    list.forEach((p,index)=>{
+        container.innerHTML+=`
+        <div class="card">
+        <h3>${p.name}</h3>
+        <p>$${p.price}</p>
+        <button onclick="addToCart(${index})">Agregar</button>
+        </div>`;
+    });
+}
+
+/* CARRITO */
+function toggleCart(){
+    document.getElementById("cartPanel").classList.toggle("active");
+}
+
+function updateCart(){
+    let items=document.getElementById("cartItems");
+    let count=document.getElementById("cartCount");
+    let total=document.getElementById("cartTotal");
+
+    items.innerHTML="";
+    let sum=0;
+
+    cart.forEach((item,i)=>{
+        sum+=item.price*item.qty;
+        items.innerHTML+=`
+        <li>${item.name} x${item.qty}
+        <button onclick="changeQty(${i},1)">+</button>
+        <button onclick="changeQty(${i},-1)">-</button>
+        </li>`;
+    });
+
+    count.textContent=cart.length;
+    total.textContent=sum;
+}
+
+function addToCart(index){
+    let product=products[index];
+    let existing=cart.find(c=>c.name===product.name);
+    if(existing){
+        existing.qty++;
+    }else{
+        cart.push({...product,qty:1});
+    }
+    updateCart();
+}
+
+function changeQty(index,change){
+    cart[index].qty+=change;
+    if(cart[index].qty<=0){
+        cart.splice(index,1);
+    }
+    updateCart();
+}
+
+function clearCart(){
+    cart=[];
+    updateCart();
+}
+
+/* ADMIN */
+function adminAccess(){
+    let pass=prompt("Contraseña de administrador:");
+    if(pass==="separabit2020"){
+        alert("Acceso concedido al panel administrativo");
+    }else{
+        alert("Contraseña incorrecta");
+    }
+}
+
+</script>
+
+</body>
+</html>

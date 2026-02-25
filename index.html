@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIRTUD STORE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --primary-dark: #0099a1;
+            --bg: #050a10;
+            --card-bg: #111a26;
+            --text: #ffffff;
+            --accent: #ff0055;
+            --success: #00ff88;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; margin: 0; }
+
+        /* --- UI ELEMENTS --- */
+        button {
+            cursor: pointer;
+            border: none;
+            transition: 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: #000;
+            padding: 10px 20px;
+            font-weight: bold;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        .btn-main:hover { background: var(--text); box-shadow: 0 0 15px var(--primary); }
+
+        .btn-danger { background: var(--accent); color: white; padding: 5px 10px; border-radius: 4px; }
+        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+
+        input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #333;
+            padding: 10px;
+            color: white;
+            border-radius: 4px;
+            width: 100%;
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* --- PORTADA --- */
+        #landing {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #1a253a 0%, #000000 100%);
+            z-index: 2000; transition: opacity 0.5s;
+        }
+        #landing h1 { font-size: 3rem; letter-spacing: 10px; text-shadow: 0 0 20px var(--primary); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% {opacity:0.8;} 50% {opacity:1;} 100% {opacity:0.8;} }
+
+        /* --- APP STRUCTURE --- */
+        #app { display: none; padding-bottom: 80px; opacity: 0; transition: opacity 1s; }
+        
+        header {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .search-container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        /* --- GRID --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 5px 20px rgba(0, 242, 255, 0.1); }
+        .card h4 { font-size: 1rem; margin-bottom: 5px; color: var(--primary); }
+        .card p { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+
+        /* --- CART PANEL --- */
+        .backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 900; display: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .backdrop.active { display: block; opacity: 1; }
+
+        .cartPanel {
+            position: fixed; right: -350px; top: 0; width: 320px; height: 100%;
+            background: #0f1520; border-left: 2px solid var(--primary);
+            z-index: 1000; padding: 20px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+        }
+        .cartPanel.active { right: 0; }
+
+        .cart-items { flex: 1; overflow-y: auto; margin: 20px 0; list-style: none; padding: 0; }
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 10px; border-radius: 5px;
+        }
+        .cart-controls button { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #555; background: transparent; color: white; }
+        .cart-total { font-size: 1.5rem; text-align: right; border-top: 1px solid #333; padding-top: 15px; }
+
+        /* --- FLOATING BUTTONS --- */
+        .fab {
+            position: fixed; right: 20px; bottom: 20px;
+            background: var(--primary); color: black;
+            width: 60px; height: 60px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+            z-index: 800; transition: 0.3s;
+        }
+        .fab:hover { transform: scale(1.1); }
+        .badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--accent); color: white;
+            font-size: 0.8rem; padding: 4px 8px; border-radius: 10px; font-weight: bold;
+        }
+
+        .admin-lock {
+            position: fixed; left: 20px; bottom: 20px;
+            opacity: 0.3; cursor: pointer; font-size: 1.5rem; z-index: 800;
+        }
+        .admin-lock:hover { opacity: 1; }
+
+        /* --- ADMIN MODAL --- */
+        .modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #1c2541; padding: 30px; border-radius: 10px; border: 1px solid var(--primary);
+            z-index: 3000; display: none; width: 90%; max-width: 400px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        .modal input { margin-bottom: 10px; }
+        .close-modal { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 1.2rem;}
+
+        /* --- TOAST NOTIFICATIONS --- */
+        #toast-container { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 5000; }
+        .toast {
+            background: rgba(0, 255, 136, 0.1); border: 1px solid var(--success);
+            color: var(--success); padding: 10px 20px; border-radius: 20px;
+            margin-top: 10px; animation: fadeUp 0.3s; backdrop-filter: blur(5px);
+        }
+        @keyframes fadeUp { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+
+    </style>
+</head>
+<body>
+
+    <div id="landing">
+        <h1>VIRTUD</h1>
+        <p style="color: #888; letter-spacing: 2px; margin-bottom: 20px;">SISTEMA DE VENTAS V.2.0</p>
+        <button class="btn-main" onclick="enterSite()">INICIAR SISTEMA</button>
+    </div>
+
+    <div id="app">
+        <header>
+            <h2>VIRTUD</h2>
+            <div style="font-size:0.8rem; color: #888;">ESTADO: ONLINE</div>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar producto (ej. Popular)..." onkeyup="searchProduct(this.value)">
+        </div>
+
+        <div class="grid" id="productGrid">
+            </div>
+    </div>
+
+    <div class="fab" id="cartFab" onclick="toggleCart()" style="display:none;">
+        🛒 <span class="badge" id="cartCount">0</span>
+    </div>
+
+    <div class="backdrop" id="backdrop" onclick="toggleCart()"></div>
+    <div class="cartPanel" id="cartPanel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>TU PEDIDO</h3>
+            <span onclick="toggleCart()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+        </div>
+        <ul class="cart-items" id="cartItems"></ul>
+        <div class="cart-total">
+            <small style="color:#888; font-size:1rem; display:block;">TOTAL A PAGAR</small>
+            $<span id="cartTotal">0.00</span> CUP
+        </div>
+        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="checkout()">FINALIZAR VENTA</button>
+        <button class="btn-danger" style="width:100%; margin-top:10px;" onclick="clearCart()">VACIAR</button>
+    </div>
+
+    <div class="admin-lock" id="adminBtn" onclick="openAdmin()" style="display:none;">🔐</div>
+
+    <div class="backdrop" id="adminBackdrop"></div>
+    <div class="modal" id="adminModal">
+        <span class="close-modal" onclick="closeAdmin()">✖</span>
+        <h3 style="margin-bottom:20px; color:var(--primary);">PANEL ADMIN</h3>
+        
+        <div id="loginSection">
+            <input type="password" id="adminPass" placeholder="Contraseña de acceso">
+            <button class="btn-main" style="width:100%" onclick="checkAdmin()">ACCEDER</button>
+        </div>
+
+        <div id="addProductSection" style="display:none;">
+            <input id="newName" placeholder="Nombre del Producto">
+            <input id="newPrice" type="number" placeholder="Precio (CUP)">
+            <button class="btn-main" style="width:100%" onclick="addNewProduct()">AGREGAR AL CATÁLOGO</button>
+            <hr style="border-color:#333; margin:15px 0;">
+            <button class="btn-danger" style="width:100%" onclick="resetDefaultProducts()">RESTAURAR BD ORIGINAL</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+<script>
+    // --- ESTADO & CONFIGURACIÓN ---
+    // Carga de productos desde LocalStorage o usa los valores por defecto (incluyendo tu memoria)
+    const defaultProducts = [
+        { id: 1, name: "H.Upman Selecto", price: 400 },
+        { id: 2, name: "H.Upman", price: 450 },
+        { id: 3, name: "Popular Rojo", price: 400 },
+        { id: 4, name: "Popular Mentol", price: 420 },
+        { id: 5, name: "Criollo", price: 350 },
+        { id: 6, name: "Cerveza Cristal", price: 280 },
+        { id: 7, name: "Refresco Lata", price: 150 }
+    ];
+
+    let products = JSON.parse(localStorage.getItem('virtud_products')) || defaultProducts;
+    let cart = JSON.parse(localStorage.getItem('virtud_cart')) || [];
+
+    // --- INICIO ---
+    function enterSite() {
+        document.getElementById("landing").style.opacity = "0";
+        setTimeout(() => {
+            document.getElementById("landing").style.display = "none";
+            const app = document.getElementById("app");
+            app.style.display = "block";
+            // Force reflow
+            void app.offsetWidth; 
+            app.style.opacity = "1";
+            
+            document.getElementById("cartFab").style.display = "flex";
+            document.getElementById("adminBtn").style.display = "block";
+            renderProducts(products);
+            updateCartUI();
+        }, 500);
+    }
+
+    // --- RENDERIZADO ---
+    function renderProducts(list) {
+        const grid = document.getElementById("productGrid");
+        grid.innerHTML = "";
+        
+        if(list.length === 0) {
+            grid.innerHTML = "<p style='text-align:center; grid-column:1/-1; color:#555;'>No se encontraron productos.</p>";
+            return;
+        }
+
+        list.forEach(prod => {
+            grid.innerHTML += `
+                <div class="card">
+                    <h4>${prod.name}</h4>
+                    <p>$${formatMoney(prod.price)}</p>
+                    <button class="btn-main btn-sm" onclick="addToCart(${prod.id})">AGREGAR +</button>
+                </div>
+            `;
+        });
+    }
+
+    function formatMoney(amount) {
+        return amount.toFixed(2);
+    }
+
+    // --- BUSCADOR ---
+    function searchProduct(text) {
+        const term = text.toLowerCase();
+        const filtered = products.filter(p => p.name.toLowerCase().includes(term));
+        renderProducts(filtered);
+    }
+
+    // --- LÓGICA DEL CARRITO ---
+    function addToCart(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+
+        const existing = cart.find(item => item.id === id);
+        if (existing) {
+            existing.qty++;
+        } else {
+            cart.push({ ...product, qty: 1 });
+        }
+        
+        saveData();
+        updateCartUI();
+        showToast(`Agregado: ${product.name}`);
+    }
+
+    function updateCartUI() {
+        const list = document.getElementById("cartItems");
+        const countSpan = document.getElementById("cartCount");
+        const totalSpan = document.getElementById("cartTotal");
+        
+        list.innerHTML = "";
+        let total = 0;
+        let count = 0;
+
+        cart.forEach((item, index) => {
+            total += item.price * item.qty;
+            count += item.qty;
+            
+            list.innerHTML += `
+                <li class="cart-item">
+                    <div>
+                        <div style="font-weight:bold; color:var(--primary);">${item.name}</div>
+                        <div style="font-size:0.8rem;">$${item.price} x ${item.qty}</div>
+                    </div>
+                    <div class="cart-controls">
+                        <button onclick="changeQty(${index}, -1)">-</button>
+                        <button onclick="changeQty(${index}, 1)">+</button>
+                    </div>
+                </li>
+            `;
+        });
+
+        countSpan.innerText = count;
+        totalSpan.innerText = formatMoney(total);
+        
+        // Animación pequeña en el badge
+        if(count > 0) {
+            countSpan.style.transform = "scale(1.2)";
+            setTimeout(()=> countSpan.style.transform = "scale(1)", 200);
+        }
+    }
+
+    function changeQty(index, delta) {
+        cart[index].qty += delta;
+        if (cart[index].qty <= 0) {
+            cart.splice(index, 1);
+        }
+        saveData();
+        updateCartUI();
+    }
+
+    function clearCart() {
+        if(confirm("¿Vaciar todo el carrito?")) {
+            cart = [];
+            saveData();
+            updateCartUI();
+            toggleCart();
+        }
+    }
+
+    function checkout() {
+        if(cart.length === 0) return alert("El carrito está vacío.");
+        alert(`Venta realizada por $${document.getElementById("cartTotal").innerText}`);
+        cart = [];
+        saveData();
+        updateCartUI();
+        toggleCart();
+    }
+
+    function toggleCart() {
+        document.getElementById("cartPanel").classList.toggle("active");
+        document.getElementById("backdrop").classList.toggle("active");
+    }
+
+    // --- PERSISTENCIA ---
+    function saveData() {
+        localStorage.setItem('virtud_cart', JSON.stringify(cart));
+        localStorage.setItem('virtud_products', JSON.stringify(products));
+    }
+
+    // --- ADMIN ---
+    function openAdmin() {
+        document.getElementById("adminModal").style.display = "block";
+        document.getElementById("adminBackdrop").style.display = "block";
+        document.getElementById("adminBackdrop").classList.add("active");
+    }
+
+    function closeAdmin() {
+        document.getElementById("adminModal").style.display = "none";
+        document.getElementById("adminBackdrop").classList.remove("active");
+        setTimeout(() => document.getElementById("adminBackdrop").style.display = "none", 300);
+        // Reset login view for security
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("addProductSection").style.display = "none";
+        document.getElementById("adminPass").value = "";
+    }
+
+    function checkAdmin() {
+        const pass = document.getElementById("adminPass").value;
+        if (pass === "separabit2020") {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("addProductSection").style.display = "block";
+        } else {
+            alert("Acceso Denegado");
+        }
+    }
+
+    function addNewProduct() {
+        const name = document.getElementById("newName").value;
+        const price = parseFloat(document.getElementById("newPrice").value);
+
+        if (name && !isNaN(price)) {
+            const newId = Date.now(); // Simple unique ID
+            products.push({ id: newId, name: name, price: price });
+            saveData();
+            renderProducts(products);
+            
+            document.getElementById("newName").value = "";
+            document.getElementById("newPrice").value = "";
+            showToast("Producto agregado al catálogo");
+        }
+    }
+
+    function resetDefaultProducts() {
+        if(confirm("¿Borrar productos personalizados y volver a la lista original?")) {
+            products = defaultProducts;
+            saveData();
+            renderProducts(products);
+            showToast("Base de datos restaurada");
+        }
+    }
+
+    // --- UTILIDADES ---
+    function showToast(msg) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+</script>
+
+</body>
+</html>
